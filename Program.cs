@@ -2,7 +2,6 @@
 using Anropa_databasen__SQL___ORM_.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Anropa_databasen__SQL___ORM_
 {
@@ -56,7 +55,10 @@ namespace Anropa_databasen__SQL___ORM_
 
                 var customers = context.Customers
                     .Include(c => c.Orders)
+                    .ThenInclude(o => o.OrderDetails)
+                    .ThenInclude(od => od.Product)
                     .OrderBy(c => c.CompanyName);
+
 
                 if (sortOrder == "d")
                 {
@@ -86,10 +88,10 @@ namespace Anropa_databasen__SQL___ORM_
         // Create a new user
         public static void AddCustomerDetails(NorthWindContext context)
         {
-            // All inputs exept "CompanyName" can be converted to null if empty. "CompanyName" is of the "no null" in the NorthWind databas
+            // All inputs can be converted to null if empty.
             Console.Clear();
             Console.Write("Company Name: ");
-            string companyName = (Console.ReadLine());
+            string companyName = ConvertEmptyToNull(Console.ReadLine());
 
             Console.Write("Contact Name: ");
             string contactName = ConvertEmptyToNull(Console.ReadLine());
@@ -121,31 +123,42 @@ namespace Anropa_databasen__SQL___ORM_
             // Random string five letters long. Used for "CustomerId"
             string randomString = GenerateRandomString(5);
             
-            // New customer is created from input details
-            var newCustomer = new Customer
+            if (companyName != null)
             {
-                CompanyName = companyName,
-                CustomerId = randomString,
-                ContactName = contactName,
-                ContactTitle = contactTitle,
-                Address = address,
-                City = city,
-                Region = region,
-                PostalCode = postalCode,
-                Country = country,
-                Phone = phone,
-                Fax = fax
-            };
+                // New customer is created from input details
+                var newCustomer = new Customer
+                {
+                    CompanyName = companyName,
+                    CustomerId = randomString,
+                    ContactName = contactName,
+                    ContactTitle = contactTitle,
+                    Address = address,
+                    City = city,
+                    Region = region,
+                    PostalCode = postalCode,
+                    Country = country,
+                    Phone = phone,
+                    Fax = fax
+                };
 
-            // Add the new customer to the context
-            context.Customers.Add(newCustomer);
+                // Add the new customer to the context
+                context.Customers.Add(newCustomer);
 
-            // Save changes to the database
-            context.SaveChanges();
+                // Save changes to the database
+                context.SaveChanges();
 
-            Console.WriteLine("New customer added to the database.");
-            Console.WriteLine("Press enter to go back to the main menu:");
-            Console.ReadLine();
+                Console.WriteLine("New customer added to the database.");
+                Console.WriteLine("Press enter to go back to the main menu:");
+                Console.ReadLine();
+            }
+
+            else
+            {
+                // "CompanyName" is of "no null" in the NorthWind databas
+                Console.WriteLine("New customer could not be added to the database. Company name can not be null.");
+                Console.WriteLine("Press enter to go back to the main menu:");
+                Console.ReadLine();
+            }
         }
 
         // Displays a small amount of info on all customers
@@ -187,7 +200,22 @@ namespace Anropa_databasen__SQL___ORM_
                             $"Fax: {c.Fax}\n\t" +
                             $"Region: {c.Region}\n\t" +
                             $"Amount of Orders: {c.Orders.Count}\n");
-                        Console.WriteLine("--------------------------------------------------------------------\n");
+
+                        // Displays all the customers orders
+                        foreach (var order in c.Orders)
+                        {
+                            // Print out order id and date ordered
+                            Console.WriteLine($" Order: {order.OrderId}");
+                            Console.WriteLine($" Date ordered: {order.OrderDate}");
+
+                            // Displays all the products and their price
+                            foreach (var orderDetail in order.OrderDetails)
+                            {
+                                Console.WriteLine($" Product: {orderDetail.Product.ProductName} | Unit price: {orderDetail.Product.UnitPrice}");
+                            }
+                            Console.WriteLine();
+                            Console.WriteLine("--------------------------------------------------------------------\n");
+                        }
                         Console.WriteLine("Press enter to go back to the main menu:");
                         Console.ReadLine();
                         break;

@@ -47,7 +47,7 @@ namespace Anropa_databasen__SQL___ORM_
             }
         }
 
-        // Gives the user the choise of ascending or descending when CustomerDetails show up
+        // Gives the user the choice of ascending or descending for CustomerDetails
         static void GettingCustomers(NorthWindContext context)
         {
             {

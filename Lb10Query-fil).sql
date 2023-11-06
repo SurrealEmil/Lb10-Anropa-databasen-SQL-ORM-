@@ -9,7 +9,7 @@ ORDER BY Categories.CategoryName, Products.ProductName;
 --Hämta alla kunder och antal ordrar de gjort. Sortera fallande på antal ordrar.
 SELECT Customers.ContactName, COUNT(Orders.OrderID) AS AmountOfOrders
 FROM Customers
-LEFT JOIN Orders
+JOIN Orders
 ON Customers.CustomerID = Orders.CustomerID
 GROUP BY Customers.ContactName
 ORDER BY AmountOfOrders DESC;

@@ -1,0 +1,233 @@
+﻿using Anropa_databasen__SQL___ORM_.Data;
+using Anropa_databasen__SQL___ORM_.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Text;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
+namespace Anropa_databasen__SQL___ORM_
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            using (var context = new NorthWindContext())
+            {
+                MainMenu(context);
+            }
+        }
+
+        // Simple menu for navigating
+        static void MainMenu(NorthWindContext context)
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine("Choose an option:");
+                Console.WriteLine("[1] Get all customers");
+                Console.WriteLine("[2] Add a new customer");
+                Console.WriteLine("[3] Exit");
+                string choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        Console.Clear();
+                        GettingCustomers(context);
+                        break;
+                    case "2":
+                        AddCustomerDetails(context);
+                        break;
+                    case "3":
+                        Environment.Exit(0);
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option. Please try again.");
+                        break;
+                }
+            }
+        }
+
+        // Gives the user the choise of ascending or descending when CustomerDetails show up
+        static void GettingCustomers(NorthWindContext context)
+        {
+            {
+                Console.Write("Enter 'a' for ascending or 'd' for descending sort by CompanyName: ");
+                string sortOrder = Console.ReadLine().ToLower();
+
+                var customers = context.Customers
+                    .Include(c => c.Orders)
+                    .OrderBy(c => c.CompanyName);
+
+                if (sortOrder == "d")
+                {
+                    customers = customers.OrderByDescending(c => c.CompanyName);
+                }
+                else if (sortOrder == "a")
+                {
+                    customers = customers.OrderBy(c => c.CompanyName);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid choice. Data will be displayed in ascending order by default.");
+                    Console.WriteLine("Press Enter to continue:");
+                    Console.ReadLine();
+                    customers = customers.OrderBy(o => o.CompanyName);
+                }
+
+                var sortedCustomers = customers.ToList();
+
+                Console.Clear();
+                DisplayCustomerDetails(sortedCustomers);
+
+                DisplayAllCustomerDetails(sortedCustomers);
+            }
+        }
+
+        // Create a new user
+        public static void AddCustomerDetails(NorthWindContext context)
+        {
+            // All inputs exept "CompanyName" can be converted to null if empty. "CompanyName" is of the "no null" in the NorthWind databas
+            Console.Clear();
+            Console.Write("Company Name: ");
+            string companyName = (Console.ReadLine());
+
+            Console.Write("Contact Name: ");
+            string contactName = ConvertEmptyToNull(Console.ReadLine());
+
+            Console.Write("Contact Title: ");
+            string contactTitle = ConvertEmptyToNull(Console.ReadLine());
+
+            Console.Write("Address: ");
+            string address = ConvertEmptyToNull(Console.ReadLine());
+
+            Console.Write("City: ");
+            string city = ConvertEmptyToNull(Console.ReadLine());
+
+            Console.Write("Region: ");
+            string region = ConvertEmptyToNull(Console.ReadLine());
+
+            Console.Write("Postal Code: ");
+            string postalCode = ConvertEmptyToNull(Console.ReadLine());
+
+            Console.Write("Country: ");
+            string country = ConvertEmptyToNull(Console.ReadLine());
+
+            Console.Write("Phone: ");
+            string phone = ConvertEmptyToNull(Console.ReadLine());
+
+            Console.Write("Fax: ");
+            string fax = ConvertEmptyToNull(Console.ReadLine());
+
+            // Random string five letters long. Used for "CustomerId"
+            string randomString = GenerateRandomString(5);
+            
+            // New customer is created from input details
+            var newCustomer = new Customer
+            {
+                CompanyName = companyName,
+                CustomerId = randomString,
+                ContactName = contactName,
+                ContactTitle = contactTitle,
+                Address = address,
+                City = city,
+                Region = region,
+                PostalCode = postalCode,
+                Country = country,
+                Phone = phone,
+                Fax = fax
+            };
+
+            // Add the new customer to the context
+            context.Customers.Add(newCustomer);
+
+            // Save changes to the database
+            context.SaveChanges();
+
+            Console.WriteLine("New customer added to the database.");
+            Console.WriteLine("Press enter to go back to the main menu:");
+            Console.ReadLine();
+        }
+
+        // Displays a small amount of info on all customers
+        public static void DisplayCustomerDetails(List<Customer> sortedCustomers)
+        {
+            for (int i = 0; i < sortedCustomers.Count; i++)
+            {
+                var c = sortedCustomers[i];
+                Console.WriteLine($"   [{i + 1}]:CompanyName: {c.CompanyName}\n\tCountry: {c.Country}\n\tPhone: {c.Phone}\n\tRegion: {c.Region}\n\tAmount of Orders: {c.Orders.Count}\n");
+                Console.WriteLine("--------------------------------------------------------------------\n");
+            }
+        }
+
+        // Displays all info on a specific customer
+        public static void DisplayAllCustomerDetails(List<Customer> sortedCustomers)
+        {
+            while (true)
+            {
+                Console.WriteLine($"Please choose a customer number (1-{sortedCustomers.Count}) or enter '0' to go back to the main menu: ");
+                if (int.TryParse(Console.ReadLine(), out int choice))
+                {
+                    if (choice == 0)
+                    {
+                        break;
+                    }
+                    else if (choice >= 1 && choice <= sortedCustomers.Count)
+                    {
+                        var c = sortedCustomers[choice - 1];
+                        Console.Clear();
+                        Console.WriteLine("--------------------------------------------------------------------\n");
+                        Console.WriteLine($"\tCompanyName: {c.CompanyName}\n\t" +
+                            $"ContactName: {c.ContactName}\n\t" +
+                            $"ContactTitle: {c.ContactTitle}\n\t" +
+                            $"Address: {c.Address}\n\t" +
+                            $"City: {c.City}\n\t" +
+                            $"PostalCode: {c.PostalCode}\n\t" +
+                            $"Country: {c.Country}\n\t" +
+                            $"Phone: {c.Phone}\n\t" +
+                            $"Fax: {c.Fax}\n\t" +
+                            $"Region: {c.Region}\n\t" +
+                            $"Amount of Orders: {c.Orders.Count}\n");
+                        Console.WriteLine("--------------------------------------------------------------------\n");
+                        Console.WriteLine("Press enter to go back to the main menu:");
+                        Console.ReadLine();
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid input.");
+                }
+            }
+        }
+
+        // Converts any empty strings to null
+        public static string ConvertEmptyToNull(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return null;
+            }
+            return input;
+        }
+
+        // Generates a random string
+        static string GenerateRandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            Random random = new Random();
+            StringBuilder stringBuilder = new StringBuilder(length);
+
+            for (int i = 0; i < length; i++)
+            {
+                int index = random.Next(chars.Length);
+                stringBuilder.Append(chars[index]);
+            }
+
+            return stringBuilder.ToString();
+        }
+    }
+}

@@ -53,35 +53,46 @@ namespace Anropa_databasen__SQL___ORM_
                 Console.Write("Enter 'a' for ascending or 'd' for descending sort by CompanyName: ");
                 string sortOrder = Console.ReadLine().ToLower();
 
-                var customers = context.Customers
-                    .Include(c => c.Orders)
-                    .ThenInclude(o => o.OrderDetails)
-                    .ThenInclude(od => od.Product)
-                    .OrderBy(c => c.CompanyName);
+                try
+                {
+                    // Attempt to retrieve customer data from the database
+                    var customers = context.Customers
+                        .Include(c => c.Orders)
+                        .ThenInclude(o => o.OrderDetails)
+                        .ThenInclude(od => od.Product)
+                        .OrderBy(c => c.CompanyName);
 
 
-                if (sortOrder == "d")
-                {
-                    customers = customers.OrderByDescending(c => c.CompanyName);
+                    if (sortOrder == "d")
+                    {
+                        Console.WriteLine("Descending");
+                        customers = customers.OrderByDescending(c => c.CompanyName);
+                    }
+                    else if (sortOrder == "a")
+                    {
+                        Console.WriteLine("Ascending");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid choice. Data will be displayed in ascending order by default.");
+                        Console.WriteLine("Press Enter to continue:");
+                        Console.ReadLine();
+                    }
+
+                    var sortedCustomers = customers.ToList();
+
+                    Console.Clear();
+                    DisplayCustomerDetails(sortedCustomers);
+
+                    DisplayAllCustomerDetails(sortedCustomers);
                 }
-                else if (sortOrder == "a")
+                catch (Exception ex)
                 {
-                    customers = customers.OrderBy(c => c.CompanyName);
-                }
-                else
-                {
-                    Console.WriteLine("Invalid choice. Data will be displayed in ascending order by default.");
-                    Console.WriteLine("Press Enter to continue:");
+                    Console.WriteLine("An error occurred while retrieving customer data.");
+                    Console.WriteLine($"Details: {ex.Message}");
+                    Console.WriteLine("Press Enter to go back to the main menu:");
                     Console.ReadLine();
-                    customers = customers.OrderBy(o => o.CompanyName);
                 }
-
-                var sortedCustomers = customers.ToList();
-
-                Console.Clear();
-                DisplayCustomerDetails(sortedCustomers);
-
-                DisplayAllCustomerDetails(sortedCustomers);
             }
         }
 
@@ -122,43 +133,56 @@ namespace Anropa_databasen__SQL___ORM_
 
             // Random string five letters long. Used for "CustomerId"
             string randomString = GenerateRandomString(5);
-            
-            if (companyName != null)
+
+            try
             {
-                // New customer is created from input details
-                var newCustomer = new Customer
+                if (companyName != null)
                 {
-                    CompanyName = companyName,
-                    CustomerId = randomString,
-                    ContactName = contactName,
-                    ContactTitle = contactTitle,
-                    Address = address,
-                    City = city,
-                    Region = region,
-                    PostalCode = postalCode,
-                    Country = country,
-                    Phone = phone,
-                    Fax = fax
-                };
+                    // New customer is created from input details
+                    var newCustomer = new Customer
+                    {
+                        CompanyName = companyName,
+                        CustomerId = randomString,
+                        ContactName = contactName,
+                        ContactTitle = contactTitle,
+                        Address = address,
+                        City = city,
+                        Region = region,
+                        PostalCode = postalCode,
+                        Country = country,
+                        Phone = phone,
+                        Fax = fax
+                    };
 
-                // Add the new customer to the context
-                context.Customers.Add(newCustomer);
+                    // Add the new customer to context
+                    context.Customers.Add(newCustomer);
 
-                // Save changes to the database
-                context.SaveChanges();
+                    // Save changes to the database
+                    context.SaveChanges();
 
-                Console.WriteLine("New customer added to the database.");
-                Console.WriteLine("Press enter to go back to the main menu:");
-                Console.ReadLine();
+                    Console.WriteLine("New customer added to the database.");
+                    Console.WriteLine("Press enter to go back to the main menu:");
+                    Console.ReadLine();
+                }
+                else
+                {
+                    // "CompanyName" is of "no null" in the NorthWind databas
+                    Console.WriteLine("New customer could not be added to the database. Company name can not be null.");
+                }
             }
-
-            else
+            catch (DbUpdateException ex)
             {
-                // "CompanyName" is of "no null" in the NorthWind databas
-                Console.WriteLine("New customer could not be added to the database. Company name can not be null.");
-                Console.WriteLine("Press enter to go back to the main menu:");
-                Console.ReadLine();
+                Console.WriteLine("Error: Failed to add a new customer. Please check the data and try again.");
+                Console.WriteLine($"Details: {ex.Message}");
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An unexpected error occurred.");
+                Console.WriteLine($"Details: {ex.Message}");
+            }
+
+            Console.WriteLine("Press enter to go back to the main menu:");
+            Console.ReadLine();
         }
 
         // Displays a small amount of info on all customers
@@ -189,17 +213,18 @@ namespace Anropa_databasen__SQL___ORM_
                         var c = sortedCustomers[choice - 1];
                         Console.Clear();
                         Console.WriteLine("--------------------------------------------------------------------\n");
-                        Console.WriteLine($"\tCompanyName: {c.CompanyName}\n\t" +
-                            $"ContactName: {c.ContactName}\n\t" +
-                            $"ContactTitle: {c.ContactTitle}\n\t" +
-                            $"Address: {c.Address}\n\t" +
-                            $"City: {c.City}\n\t" +
-                            $"PostalCode: {c.PostalCode}\n\t" +
-                            $"Country: {c.Country}\n\t" +
-                            $"Phone: {c.Phone}\n\t" +
-                            $"Fax: {c.Fax}\n\t" +
-                            $"Region: {c.Region}\n\t" +
+                        Console.WriteLine($"CompanyName: {c.CompanyName}\n" +
+                            $"ContactName: {c.ContactName}\n" +
+                            $"ContactTitle: {c.ContactTitle}\n" +
+                            $"Address: {c.Address}\n" +
+                            $"City: {c.City}\n" +
+                            $"PostalCode: {c.PostalCode}\n" +
+                            $"Country: {c.Country}\n" +
+                            $"Phone: {c.Phone}\n" +
+                            $"Fax: {c.Fax}\n" +
+                            $"Region: {c.Region}\n" +
                             $"Amount of Orders: {c.Orders.Count}\n");
+                        Console.WriteLine("--------------------------------------------------------------------\n");
 
                         // Displays all the customers orders
                         foreach (var order in c.Orders)
